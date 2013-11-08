@@ -101,6 +101,16 @@ class Crawler
     public function main()
     {
         $output = fopen('php://output', 'w');
+        fputcsv($output, array(
+            '縣市代號', 
+            '縣市',
+            '大類別',
+            '小類別代號',
+            '小類別名稱',
+            '地標名稱',
+            '經度',
+            '緯度',
+        ));
         foreach ($this->getCities() as $city_id => $city_name) {
             foreach ($this->getCategories() as $category) {
                 foreach ($this->getClassByCategory($category) as $class_id => $class_name) {
