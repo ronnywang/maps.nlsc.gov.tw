@@ -8,8 +8,20 @@ class Crawler
     protected $_projSrc = null;
     protected $_projDst = null;
 
-    public function proj($x, $y)
+    public function proj($x, $y, $country_id)
     {
+        $url = 'http://maps.nlsc.gov.tw/O09/pro/transcoord.action';
+        $curl = curl_init($url);
+        curl_setopt($curl, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($curl, CURLOPT_POSTFIELDS, "type=84&x={$x}&y={$y}&city={$country_id}");
+        $ret = curl_exec($curl);
+        $doc = new DOMDocument;
+        @$doc->loadXML($ret);
+        $ret = new StdClass;
+        $ret->x = $doc->getElementsByTagName('coordX')->item(0)->nodeValue;
+        $ret->y = $doc->getElementsByTagName('coordY')->item(0)->nodeValue;
+        return $ret;
+        /*
         if (!$this->_proj4) {
             $this->_proj4 = new Proj4php();
             $this->_projSrc = new Proj4phpProj('EPSG:TM2', $this->_proj4);
@@ -19,6 +31,7 @@ class Crawler
         $pointSrc = new proj4phpPoint($x, $y);
         $pointDst = $this->_proj4->transform($this->_projSrc, $this->_projDst, $pointSrc);
         return $pointDst;
+         */
     }
 
     public function getCities()
@@ -108,14 +121,14 @@ class Crawler
             '小類別代號',
             '小類別名稱',
             '地標名稱',
-            '經度',
             '緯度',
+            '經度',
         ));
         foreach ($this->getCities() as $city_id => $city_name) {
             foreach ($this->getCategories() as $category) {
                 foreach ($this->getClassByCategory($category) as $class_id => $class_name) {
                     foreach ($this->getLandmarks($city_id, $class_id) as $landmark) {
-                        $proj = ($this->proj($landmark[0], $landmark[1]));
+                        $proj = ($this->proj($landmark[0], $landmark[1], $city_id));
                         fputcsv($output, array(
                             $city_id,
                             $city_name,
@@ -123,8 +136,8 @@ class Crawler
                             $class_id,
                             $class_name,
                             $landmark[2],
-                            $proj->x,
                             $proj->y,
+                            $proj->x,
                         ));
                     }
                 }
